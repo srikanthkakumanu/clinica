@@ -34,3 +34,23 @@ dependencies {
 test {
 	useJUnitPlatform()
 }
+
+// task packageDistribution(type: Zip) {
+//     archiveFileName = "my-distribution.zip"
+//     destinationDirectory = file("$buildDir/dist")
+
+//     from "$buildDir/toArchive"
+// }
+
+// task zip(type: Zip, dependsOn: bootRepackage) {
+//   def fileName = "${jar.baseName}-${jar.version}"
+//   from projectDir
+//   include "script.sh"
+//   from file("$buildDir/libs")
+//   include "${fileName}.jar"
+//   from file('src/dist')
+//   include "config/application.yml"
+//   archiveName "${fileName}.zip"
+// }
+
+// build.dependsOn(zip)

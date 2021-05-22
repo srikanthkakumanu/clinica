@@ -1,9 +1,6 @@
 package com.srikanth.clinica;
 
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
-
-import javax.print.attribute.standard.Media;
 
 import com.srikanth.clinica.controller.DoctorController;
 import com.srikanth.clinica.model.Doctor;
@@ -23,6 +20,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.beans.factory.annotation.Autowired;
+
 
 @ExtendWith(SpringExtension.class)
 @WebFluxTest(controllers = DoctorController.class)
