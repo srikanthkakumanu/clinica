@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinica
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clinica
+  template:
+    metadata:
+      labels:
+        app: clinica
+    spec:
+      containers:
+        - name: clinica
+          image: REPLACE_IMAGE
+          ports:
+            - containerPort: 9091
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
