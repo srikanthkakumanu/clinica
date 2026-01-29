@@ -31,6 +31,7 @@ This project is a simple Spring Boot microservice for managing doctors in a clin
 ### Building and Running the Application
 
 1.  **Clone the repository:**
+
     ```bash
     git clone <repository-url>
     cd clinica
@@ -55,27 +56,30 @@ Use the default settings to connect (`JDBC URL: jdbc:h2:mem:clinica`).
 
 The API provides the following endpoints for managing doctors:
 
-| Method   | Endpoint                  | Description                               |
-|----------|---------------------------|-------------------------------------------|
-| `POST`   | `/api/doctors`            | Creates a new doctor.                     |
-| `GET`    | `/api/doctors`            | Retrieves a paginated list of all doctors.|
+| Method   | Endpoint                         | Description                                 |
+| -------- | -------------------------------- | ------------------------------------------- |
+| `POST`   | `/api/doctors`                   | Creates a new doctor.                       |
+| `GET`    | `/api/doctors`                   | Retrieves a paginated list of all doctors.  |
 | `GET`    | `/api/doctors?pincode={pincode}` | Finds doctors by their pincode (paginated). |
-| `GET`    | `/api/doctors/{id}`       | Retrieves a single doctor by their ID.    |
-| `PUT`    | `/api/doctors/{id}`       | Updates the details of an existing doctor.|
-| `DELETE` | `/api/doctors/{id}`       | Deletes a doctor by their ID.             |
-| `DELETE` | `/api/doctors`            | Deletes all doctors.                      |
+| `GET`    | `/api/doctors/{id}`              | Retrieves a single doctor by their ID.      |
+| `PUT`    | `/api/doctors/{id}`              | Updates the details of an existing doctor.  |
+| `DELETE` | `/api/doctors/{id}`              | Deletes a doctor by their ID.               |
+| `DELETE` | `/api/doctors`                   | Deletes all doctors.                        |
 
 ### Pagination Parameters
 
 The `GET /api/doctors` endpoint supports the following query parameters for pagination:
+
 - `page`: The page number to retrieve (0-indexed).
 - `size`: The number of items per page.
 - `sort`: A comma-separated list of properties to sort by (e.g., `lastName,asc`).
 
 **Example:**
+
 ```
 GET /api/doctors?page=0&size=5&sort=lastName,asc
 ```
+
 This request retrieves the first page of 5 doctors, sorted by their last name in ascending order.
 
 ## API Documentation (Swagger UI)
@@ -93,3 +97,21 @@ To run the full suite of unit and integration tests, use the following Gradle co
 ```
 
 A test report will be generated in the `build/reports/tests/test/` directory.
+
+## SonarQube Code Quality
+
+Add SonarQube analysis to the CI by providing the following GitHub repository secrets:
+
+- `SONAR_HOST_URL`: The SonarQube server URL (for example `https://sonarqube.example.com`).
+- `SONAR_TOKEN`: The SonarQube authentication token (user or project token).
+- `SONAR_PROJECT_KEY` (optional): The SonarQube project key to associate analysis with a specific project.
+
+The GitHub Actions workflow runs `./gradlew sonarqube` with these secrets.
+
+To run SonarQube analysis locally:
+
+```bash
+./gradlew sonarqube -Dsonar.host.url=https://your-sonarqube.example -Dsonar.login=YOUR_TOKEN
+```
+
+Optionally set `-Dsonar.projectKey` if your SonarQube server requires an explicit project key.

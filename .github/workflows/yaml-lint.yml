@@ -1,0 +1,32 @@
+name: YAML Lint
+
+on:
+  push:
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+  pull_request:
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+
+jobs:
+  yaml-lint:
+    name: Lint YAML files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run Super-Linter (YAML only)
+        uses: github/super-linter@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_WORKSPACE: ${{ github.workspace }}
+          VALIDATE_YAML: true
+          # Disable other linters to keep this job focused on YAML
+          VALIDATE_ALL_CODEBASE: false
+          FILTER_REGEX_EXCLUDE: ''
+          # Output as GitHub checks / PR review comments
+          OUTPUT_FORMAT: github-pr-review

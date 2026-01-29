@@ -29,8 +29,23 @@ jobs:
     - name: Run unit tests
       run: ./gradlew test
 
-    - name: SonarQube Scan (Placeholder)
-      run: echo "This step is a placeholder for SonarQube analysis."
+    - name: SonarQube Scan
+      env:
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+      run: |
+        echo "Running SonarQube analysis..."
+        if [ -z "$SONAR_HOST_URL" ] || [ -z "$SONAR_TOKEN" ]; then
+          echo "Required secrets SONAR_HOST_URL or SONAR_TOKEN are missing"
+          exit 1
+        fi
+        CMD=("./gradlew" "sonarqube" "-Dsonar.host.url=${SONAR_HOST_URL}" "-Dsonar.login=${SONAR_TOKEN}")
+        if [ -n "$SONAR_PROJECT_KEY" ]; then
+          CMD+=("-Dsonar.projectKey=${SONAR_PROJECT_KEY}")
+          echo "Using SONAR_PROJECT_KEY: ${SONAR_PROJECT_KEY}"
+        fi
+        "${CMD[@]}"
 
   deploy-to-dockerhub:
     needs: build-and-test
