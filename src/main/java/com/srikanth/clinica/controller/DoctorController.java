@@ -7,12 +7,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/doctors")
@@ -38,19 +37,19 @@ public class DoctorController {
         }
     }
 
-    @Operation(summary = "Find doctors by pin code or get all doctors")
+    @Operation(summary = "Find doctors by pincode or get all doctors with pagination")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved doctors"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @GetMapping
-    public ResponseEntity<List<Doctor>> findDoctors(@RequestParam(required = false) String pincode) {
+    public ResponseEntity<Page<Doctor>> findDoctors(@RequestParam(required = false) String pincode, Pageable pageable) {
         try {
-            List<Doctor> doctors = new ArrayList<>();
+            Page<Doctor> doctors;
             if (pincode == null) {
-                doctors.addAll(doctorRepo.findAll());
+                doctors = doctorRepo.findAll(pageable);
             } else {
-                doctors.addAll(doctorRepo.findByPincode(pincode));
+                doctors = doctorRepo.findByPincode(pincode, pageable);
             }
             return new ResponseEntity<>(doctors, HttpStatus.OK);
         } catch (Exception e) {

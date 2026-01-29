@@ -5,6 +5,7 @@ This project is a simple Spring Boot microservice for managing doctors in a clin
 ## Features
 
 - **CRUD Operations**: Full support for creating, reading, updating, and deleting doctor records.
+- **Pagination**: The API supports pagination for retrieving lists of doctors.
 - **In-Memory Database**: Uses H2 as an in-memory database for easy setup and testing.
 - **API Documentation**: Integrated Swagger UI for clear, interactive API documentation.
 - **Modern Java**: Built with modern, clean Java code.
@@ -44,17 +45,11 @@ The application will start on `http://localhost:9091`.
 
 ## Accessing the H2 Database Console
 
-To view and interact with the data directly, you can enable the H2 web console.
+To view and interact with the data directly, you can enable the H2 web console. The project is already configured for this.
 
-1.  Add the following line to `src/main/resources/application.properties` (create the file if it doesn't exist):
-    ```properties
-    spring.h2.console.enabled=true
-    ```
+- **H2 Console**: [http://localhost:9091/h2](http://localhost:9091/h2)
 
-2.  Restart the application. The console will be available at:
-    - **H2 Console**: [http://localhost:9091/h2-console](http://localhost:8080/h2-console)
-
-    Use the default settings to connect (`JDBC URL: jdbc:h2:mem:testdb`).
+Use the default settings to connect (`JDBC URL: jdbc:h2:mem:clinica`).
 
 ## API Endpoints
 
@@ -63,12 +58,25 @@ The API provides the following endpoints for managing doctors:
 | Method   | Endpoint                  | Description                               |
 |----------|---------------------------|-------------------------------------------|
 | `POST`   | `/api/doctors`            | Creates a new doctor.                     |
-| `GET`    | `/api/doctors`            | Retrieves a list of all doctors.          |
-| `GET`    | `/api/doctors?pincode={pincode}` | Finds doctors by their pincode.        |
+| `GET`    | `/api/doctors`            | Retrieves a paginated list of all doctors.|
+| `GET`    | `/api/doctors?pincode={pincode}` | Finds doctors by their pincode (paginated). |
 | `GET`    | `/api/doctors/{id}`       | Retrieves a single doctor by their ID.    |
 | `PUT`    | `/api/doctors/{id}`       | Updates the details of an existing doctor.|
 | `DELETE` | `/api/doctors/{id}`       | Deletes a doctor by their ID.             |
 | `DELETE` | `/api/doctors`            | Deletes all doctors.                      |
+
+### Pagination Parameters
+
+The `GET /api/doctors` endpoint supports the following query parameters for pagination:
+- `page`: The page number to retrieve (0-indexed).
+- `size`: The number of items per page.
+- `sort`: A comma-separated list of properties to sort by (e.g., `lastName,asc`).
+
+**Example:**
+```
+GET /api/doctors?page=0&size=5&sort=lastName,asc
+```
+This request retrieves the first page of 5 doctors, sorted by their last name in ascending order.
 
 ## API Documentation (Swagger UI)
 
