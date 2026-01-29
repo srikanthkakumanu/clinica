@@ -1,52 +1,79 @@
 package com.srikanth.clinica;
 
-import static org.mockito.Mockito.times;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.srikanth.clinica.controller.DoctorController;
 import com.srikanth.clinica.model.Doctor;
 import com.srikanth.clinica.repos.DoctorRepo;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.context.annotation.Import;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import reactor.core.publisher.Mono;
+import java.util.Optional;
 
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-@ExtendWith(SpringExtension.class)
-@WebFluxTest(controllers = DoctorController.class)
-@Import(Doctor.class)
+@ExtendWith(MockitoExtension.class)
 public class DoctorRegistrationTests {
 
-    @MockBean
-    DoctorRepo repo;
+    private MockMvc mockMvc;
 
-    @Autowired
-    private WebTestClient webclient;
+    @Mock
+    private DoctorRepo doctorRepo;
+
+    @InjectMocks
+    private DoctorController doctorController;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(doctorController).build();
+    }
 
     @Test
-    void testCreateDoctor() {
+    void whenCreateDoctor_thenReturns201Created() throws Exception {
         Doctor doctor = new Doctor("Srikanth", "Kakumanu", "Lakshmi Prasad Arcade", "Tenali", "522201");
-        Mono<Doctor> doctorMono = Mono.just(doctor);
+        Doctor savedDoctor = new Doctor(1L, "Srikanth", "Kakumanu", "Lakshmi Prasad Arcade", "Tenali", "522201");
 
-        Mockito.when(repo.save(doctor)).thenReturn(doctorMono.block());
-        
-        webclient.post()
-                .uri("/api/doctors")
+        when(doctorRepo.save(ArgumentMatchers.any(Doctor.class))).thenReturn(savedDoctor);
+
+        mockMvc.perform(post("/api/doctors")
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(BodyInserters.fromValue(doctor))
-                .exchange()
-                .expectStatus().isCreated();
-        
-        Mockito.verify(repo, times(1)).save(doctor);
+                .content(objectMapper.writeValueAsString(doctor)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.firstName", is("Srikanth")))
+                .andExpect(jsonPath("$.lastName", is("Kakumanu")));
+    }
+
+    @Test
+    void whenGetDoctorById_withValidId_thenReturns200Ok() throws Exception {
+        Doctor doctor = new Doctor(1L, "Srikanth", "Kakumanu", "Lakshmi Prasad Arcade", "Tenali", "522201");
+        when(doctorRepo.findById(1L)).thenReturn(Optional.of(doctor));
+
+        mockMvc.perform(get("/api/doctors/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.firstName", is("Srikanth")));
+    }
+
+    @Test
+    void whenGetDoctorById_withInvalidId_thenReturns404NotFound() throws Exception {
+        when(doctorRepo.findById(1L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/doctors/1"))
+                .andExpect(status().isNotFound());
     }
 }

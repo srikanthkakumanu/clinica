@@ -1,115 +1,124 @@
 package com.srikanth.clinica.controller;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import javax.print.Doc;
-
 import com.srikanth.clinica.model.Doctor;
 import com.srikanth.clinica.repos.DoctorRepo;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-//@CrossOrigin(origins = "http://localhost:9091", maxAge = 3600)
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/doctors")
+@RequiredArgsConstructor
+@Tag(name = "Doctor API", description = "API for managing doctors")
 public class DoctorController {
-    
-    @Autowired
-    DoctorRepo doctorRepo;
 
-    // @GetMapping("/doctors/{id}")
-    // public ResponseEntity<Doctor> getDoctorById(@PathVariable("id") long id) {
-    //     Optional<Doctor> doctor = doctorRepo.findById(id);
-    //     if(doctor.isPresent())
-    //         return new ResponseEntity<>(doctor.get(), HttpStatus.OK);
-    //     else
-    //         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    // }
+    private final DoctorRepo doctorRepo;
 
+    @Operation(summary = "Create a new doctor")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Doctor created successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping
-    public ResponseEntity<Doctor> create(@RequestBody Doctor doctor) {
+    public ResponseEntity<Doctor> createDoctor(@RequestBody Doctor doctor) {
         try {
-            Doctor _doctor = doctorRepo.save(doctor);
-            return new ResponseEntity<>(_doctor, HttpStatus.CREATED);
-        } catch(Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Doctor> update(@PathVariable("id") long id, @RequestBody Doctor doctor) {
-        Optional<Doctor> foundDoctor = doctorRepo.findById(id);
-        if(foundDoctor.isPresent()) {
-            Doctor _doctor = foundDoctor.get();
-            _doctor.setFirstName(doctor.getFirstName());
-            _doctor.setLastName(doctor.getLastName());
-            _doctor.setAddress(doctor.getAddress());
-            _doctor.setCity(doctor.getCity());
-            _doctor.setPincode(doctor.getPincode());
-            return new ResponseEntity<>(doctorRepo.save(_doctor), HttpStatus.OK);
-        } else
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> delete(@PathVariable("id") long id) {
-        try {
-            doctorRepo.deleteById(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch(Exception e) {
+            Doctor newDoctor = new Doctor(doctor.getFirstName(), doctor.getLastName(), doctor.getAddress(), doctor.getCity(), doctor.getPincode());
+            Doctor savedDoctor = doctorRepo.save(newDoctor);
+            return new ResponseEntity<>(savedDoctor, HttpStatus.CREATED);
+        } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    @Operation(summary = "Find doctors by pin code or get all doctors")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved doctors"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping
+    public ResponseEntity<List<Doctor>> findDoctors(@RequestParam(required = false) String pincode) {
+        try {
+            List<Doctor> doctors = new ArrayList<>();
+            if (pincode == null) {
+                doctors.addAll(doctorRepo.findAll());
+            } else {
+                doctors.addAll(doctorRepo.findByPincode(pincode));
+            }
+            return new ResponseEntity<>(doctors, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Operation(summary = "Get a doctor by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved doctor"),
+            @ApiResponse(responseCode = "404", description = "Doctor not found")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<Doctor> getDoctorById(@PathVariable("id") long id) {
+        return doctorRepo.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @Operation(summary = "Update a doctor's details")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Doctor updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Doctor not found")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<Doctor> updateDoctor(@PathVariable("id") long id, @RequestBody Doctor doctorDetails) {
+        return doctorRepo.findById(id)
+                .map(doctor -> {
+                    doctor.setFirstName(doctorDetails.getFirstName());
+                    doctor.setLastName(doctorDetails.getLastName());
+                    doctor.setAddress(doctorDetails.getAddress());
+                    doctor.setCity(doctorDetails.getCity());
+                    doctor.setPincode(doctorDetails.getPincode());
+                    return new ResponseEntity<>(doctorRepo.save(doctor), HttpStatus.OK);
+                })
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @Operation(summary = "Delete a doctor by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Doctor deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Doctor not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HttpStatus> deleteDoctor(@PathVariable("id") long id) {
+        try {
+            if (!doctorRepo.existsById(id)) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            doctorRepo.deleteById(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Operation(summary = "Delete all doctors")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "All doctors deleted successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @DeleteMapping
-    public ResponseEntity<HttpStatus> delete() {
+    public ResponseEntity<HttpStatus> deleteAllDoctors() {
         try {
             doctorRepo.deleteAll();
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch(Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Doctor>> getAllDoctors() {
-        try {
-            List<Doctor> doctors = new ArrayList<Doctor>();
-            doctorRepo.findAll().forEach(doctors::add);
-            
-            if(doctors.isEmpty())
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            
-            return new ResponseEntity<>(doctors, HttpStatus.OK);
-        } catch(Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping("/{pincode}")
-    public ResponseEntity<List<Doctor>> findByPincode(@PathVariable("pincode") String pincode) {
-        try {
-            List<Doctor> doctors = doctorRepo.findByPincode(pincode);
-            if(doctors.isEmpty())
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            else
-                return new ResponseEntity<>(doctors, HttpStatus.OK);
-        } catch(Exception e) {
+        } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

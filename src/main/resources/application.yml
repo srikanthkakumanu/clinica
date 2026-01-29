@@ -3,7 +3,7 @@ server:
 spring:
     datasource:
         driverClassName: org.h2.Driver
-        url: jdbc:h2:mem:testdb
+        url: jdbc:h2:mem:clinica;DB_CLOSE_DELAY=-1
 #        url: jdbc:h2:file:/home/vagrant/practice/clinica/data/testdb 
         username: sa
         password: 
