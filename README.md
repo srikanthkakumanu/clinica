@@ -170,26 +170,22 @@ JaCoCo generates code coverage reports during testing. The HTML report can be fo
 
 ## CI/CD Pipeline
 
-The project uses a Jenkins pipeline for Continuous Integration and Continuous Deployment.
+The project supports both Jenkins and GitHub Actions for Continuous Integration and Continuous Deployment.
 
-### CI Stages:
+### Jenkins Pipeline
 
-- **Build**: Compiles the application.
-- **Test**: Runs tests and generates coverage reports.
-- **Code Quality**: Performs SonarQube analysis.
-- **Quality Gate**: Waits for SonarQube quality gate.
-- **Build Docker Image**: Creates a Docker image.
-- **Push to DockerHub**: Pushes the image to DockerHub.
+- **Configuration**: [Jenkinsfile](Jenkinsfile)
+- **CI Stages**: Build, Test (with JaCoCo), Code Quality (SonarQube), Quality Gate, Build Docker Image, Push to DockerHub.
+- **CD Stage**: Deploy to Kubernetes on the `main` branch.
 
-### CD Stage:
+### GitHub Actions Pipeline
 
-- **Deploy**: Deploys to Kubernetes on the `main` branch.
+- **Workflow**: [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml)
+- **CI Job**: Build, Test (with JaCoCo), SonarQube Scan, Build and Push Docker Image to DockerHub.
+- **CD Job**: Deploy to Kubernetes on push to `main` branch.
 
-### Prerequisites for Jenkins:
+### Prerequisites for Both:
 
-- SonarQube server configured in Jenkins.
-- DockerHub credentials set up.
-- `sonar-scanner` installed on the Jenkins agent.
-- Kubernetes cluster access for deployment.
-
-See `Jenkinsfile` for the pipeline configuration.
+- SonarQube server with `SONAR_HOST_URL` and `SONAR_TOKEN` secrets.
+- DockerHub credentials (`DOCKERHUB_USERNAME` and `DOCKERHUB_PASSWORD` for GitHub Actions; `dockerhub-credentials` for Jenkins).
+- Kubernetes cluster access (`KUBE_CONFIG_DATA` secret for GitHub Actions; kubectl configured for Jenkins).

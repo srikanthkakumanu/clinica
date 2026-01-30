@@ -1,56 +1,72 @@
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Build with Gradle
-        run: ./gradlew build --no-daemon
 
-  docker:
-    runs-on: ubuntu-latest
-    needs: build
-    outputs:
-      image: ${{ steps.image.outputs.image }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Log in to registry
-        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ secrets.REGISTRY }} -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
-      - name: Build and push Docker image
-        run: |
-          IMAGE=${{ secrets.REGISTRY }}/clinica:${{ github.sha }}
-          docker build -t $IMAGE .
-          docker push $IMAGE
-      - name: Set image output
-        id: image
-        run: echo "image=${{ secrets.REGISTRY }}/clinica:${{ github.sha }}" >> $GITHUB_OUTPUT
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-  deploy:
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: ${{ runner.os }}-gradle-
+
+    - name: Build
+      run: ./gradlew build --no-daemon
+
+    - name: Test
+      run: ./gradlew test jacocoTestReport --no-daemon
+
+    - name: SonarQube Scan
+      uses: sonarsource/sonarqube-scan-action@v2
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    - name: Build Docker Image
+      run: docker build -t clinica:${{ github.run_number }} .
+
+    - name: Log in to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Push Docker Image
+      run: |
+        docker tag clinica:${{ github.run_number }} ${{ secrets.DOCKERHUB_USERNAME }}/clinica:${{ github.run_number }}
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/clinica:${{ github.run_number }}
+
+  cd:
+    needs: ci
     runs-on: ubuntu-latest
-    needs: docker
+    if: github.ref == 'refs/heads/main'
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Install kubectl
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
-      - name: Deploy to Kubernetes
-        env:
-          IMAGE: ${{ needs.docker.outputs.image }}
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
-        run: |
-          echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
-          sed -i "s|REPLACE_IMAGE|$IMAGE|g" k8s/deployment.yaml || true
-          kubectl apply -f k8s
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+
+    - name: Deploy to Kubernetes
+      run: kubectl apply -f k8s/
