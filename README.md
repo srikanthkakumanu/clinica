@@ -9,17 +9,71 @@ This project is a simple Spring Boot microservice for managing doctors in a clin
 - **In-Memory Database**: Uses H2 as an in-memory database for easy setup and testing.
 - **API Documentation**: Integrated Swagger UI for clear, interactive API documentation.
 - **Modern Java**: Built with modern, clean Java code.
+- **Code Quality**: Integrated SonarQube for static code analysis.
+- **Test Coverage**: JaCoCo for code coverage reporting.
+- **CI/CD Pipeline**: Jenkins pipeline for automated building, testing, Docker image creation, and deployment.
 
 ## Technologies Used
 
 - **Java 21**: The core programming language.
-- **Spring Boot 3.2.5**: The application framework.
+- **Spring Boot 3.4.4**: The application framework.
 - **Spring Web**: For building the RESTful API.
 - **Spring Data JPA**: For database interaction.
 - **H2 Database**: An in-memory database.
 - **Lombok**: To reduce boilerplate code.
 - **Springdoc OpenAPI**: For generating Swagger API documentation.
-- **Gradle**: The build automation tool.
+- **Gradle 9.3.1**: The build automation tool.
+- **JaCoCo**: For code coverage.
+- **SonarQube**: For code quality analysis.
+- **Docker**: For containerization.
+- **Kubernetes**: For deployment orchestration.
+- **Jenkins**: For CI/CD pipeline.
+
+## Getting Started
+
+### Prerequisites
+
+- JDK 21 or later
+- Gradle 8.x or later
+- Docker (for containerization)
+- Kubernetes cluster (for deployment)
+
+### Building and Running the Application
+
+1.  **Clone the repository:**
+
+    ```bash
+    git clone <repository-url>
+    cd clinica
+    ```
+
+2.  **Run the application using Gradle:**
+    ```bash
+    ./gradlew bootRun
+    ```
+
+The application will start on `http://localhost:9091`.
+
+### Running with Docker
+
+1. Build the Docker image:
+
+   ```bash
+   docker build -t clinica .
+   ```
+
+2. Run the container:
+   ```bash
+   docker run -p 9091:9091 clinica
+   ```
+
+## Accessing the H2 Database Console
+
+To view and interact with the data directly, you can enable the H2 web console. The project is already configured for this.
+
+- **H2 Console**: [http://localhost:9091/h2](http://localhost:9091/h2)
+
+Use the default settings to connect (`JDBC URL: jdbc:h2:mem:clinica`).
 
 ## Getting Started
 
@@ -93,25 +147,49 @@ Once the application is running, you can access the interactive Swagger UI to ex
 To run the full suite of unit and integration tests, use the following Gradle command:
 
 ```bash
-./gradlew test
+./gradlew test jacocoTestReport
 ```
 
-A test report will be generated in the `build/reports/tests/test/` directory.
+Test reports will be generated in the `build/test-results/test/` directory, and coverage reports in `build/reports/jacoco/test/`.
 
-## SonarQube Code Quality
+## Code Quality and Coverage
 
-Add SonarQube analysis to the CI by providing the following GitHub repository secrets:
+### SonarQube Analysis
 
-- `SONAR_HOST_URL`: The SonarQube server URL (for example `https://sonarqube.example.com`).
-- `SONAR_TOKEN`: The SonarQube authentication token (user or project token).
-- `SONAR_PROJECT_KEY` (optional): The SonarQube project key to associate analysis with a specific project.
-
-The GitHub Actions workflow runs `./gradlew sonarqube` with these secrets.
+The project is configured for SonarQube code quality analysis. The `sonar-project.properties` file contains the necessary configuration.
 
 To run SonarQube analysis locally:
 
 ```bash
-./gradlew sonarqube -Dsonar.host.url=https://your-sonarqube.example -Dsonar.login=YOUR_TOKEN
+sonar-scanner -Dsonar.host.url=https://your-sonarqube-server -Dsonar.login=YOUR_TOKEN
 ```
 
-Optionally set `-Dsonar.projectKey` if your SonarQube server requires an explicit project key.
+### JaCoCo Coverage
+
+JaCoCo generates code coverage reports during testing. The HTML report can be found in `build/reports/jacoco/test/html/index.html` after running tests.
+
+## CI/CD Pipeline
+
+The project uses a Jenkins pipeline for Continuous Integration and Continuous Deployment.
+
+### CI Stages:
+
+- **Build**: Compiles the application.
+- **Test**: Runs tests and generates coverage reports.
+- **Code Quality**: Performs SonarQube analysis.
+- **Quality Gate**: Waits for SonarQube quality gate.
+- **Build Docker Image**: Creates a Docker image.
+- **Push to DockerHub**: Pushes the image to DockerHub.
+
+### CD Stage:
+
+- **Deploy**: Deploys to Kubernetes on the `main` branch.
+
+### Prerequisites for Jenkins:
+
+- SonarQube server configured in Jenkins.
+- DockerHub credentials set up.
+- `sonar-scanner` installed on the Jenkins agent.
+- Kubernetes cluster access for deployment.
+
+See `Jenkinsfile` for the pipeline configuration.

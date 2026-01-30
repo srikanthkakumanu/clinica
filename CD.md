@@ -1,28 +1,49 @@
 # Continuous Deployment (CD)
 
-This repository includes a GitHub Actions workflow to build, test, build/push a Docker image, and deploy to Kubernetes.
+This repository includes a Jenkins pipeline for Continuous Deployment to Kubernetes.
 
-- **Workflow**: [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml)
+- **Pipeline**: [Jenkinsfile](Jenkinsfile)
 - **Kubernetes manifests**: [k8s/deployment.yaml](k8s/deployment.yaml) and [k8s/service.yaml](k8s/service.yaml)
 - **Deploy script**: [scripts/deploy.sh](scripts/deploy.sh)
 
-Placeholders in the workflow and manifests must be supplied in your repository secrets or replaced before use:
+## Jenkins CD Configuration
 
-- `REGISTRY` — Docker registry host (for example `ghcr.io/<owner>`).
-- `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` — credentials for the registry.
-- `KUBE_CONFIG_DATA` — base64-encoded kubeconfig for `kubectl` access in the deploy job.
+The Jenkins pipeline includes a CD stage that deploys to Kubernetes when changes are pushed to the `main` branch.
 
-To enable CD:
+### Prerequisites:
 
-1. Add the above secrets in your GitHub repository settings.
-2. Ensure `k8s/deployment.yaml` uses the correct container port and environment variables for your production profile.
-3. Push to the `main` branch to trigger the workflow, or run the `scripts/deploy.sh` locally with an image reference:
+- Jenkins agent with `kubectl` configured for your Kubernetes cluster.
+- DockerHub credentials set up in Jenkins (credential ID: `dockerhub-credentials`).
+- Replace `your-dockerhub-username` in `Jenkinsfile` with your actual DockerHub username.
+
+### Deployment Process:
+
+1. Build and push Docker image to DockerHub.
+2. Apply Kubernetes manifests using `kubectl apply -f k8s/`.
+
+## Manual Deployment
+
+To deploy manually:
+
+1. Build and push the Docker image:
+
+   ```bash
+   docker build -t your-dockerhub-username/clinica:latest .
+   docker push your-dockerhub-username/clinica:latest
+   ```
+
+2. Deploy to Kubernetes:
+   ```bash
+   kubectl apply -f k8s/
+   ```
+
+Or use the deploy script:
 
 ```bash
-./scripts/deploy.sh my-registry/clinica:tag ~/.kube/config
+./scripts/deploy.sh
 ```
 
-Notes:
+## Notes
 
-- The workflow uses placeholders and minimal steps; adapt and secure it to match your org policies (image signing, approvals, staging promotion, etc.).
-- `KUBE_CONFIG_DATA` must be base64-encoded content of your kubeconfig file (for runner use). Alternatively, replace the deploy step with a deployment action that reads from secrets or uses a deployment gate.
+- Ensure the Kubernetes manifests are configured for your environment (e.g., correct image name, ports, environment variables).
+- Adapt the pipeline and manifests to match your organization's policies (e.g., image scanning, approvals, staging environments).
