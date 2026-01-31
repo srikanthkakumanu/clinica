@@ -2,21 +2,77 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: clinica
+  labels:
+    app.kubernetes.io/name: clinica
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: clinica-prod
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: kubectl
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: clinica
+      app.kubernetes.io/name: clinica
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/instance: clinica-prod
   template:
     metadata:
       labels:
-        app: clinica
+        app.kubernetes.io/name: clinica
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/instance: clinica-prod
+        app.kubernetes.io/version: "1.0"
+        app.kubernetes.io/managed-by: kubectl
     spec:
       containers:
         - name: clinica
           image: REPLACE_IMAGE
           ports:
             - containerPort: 9091
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: clinica-config
           env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: "prod"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:h2:mem:clinica"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: "org.h2.Driver"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9091
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9091
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9091
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1

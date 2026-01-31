@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clinica-config
+  labels:
+    app.kubernetes.io/name: clinica
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: clinica-prod
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: kubectl
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  JAVA_OPTS: "-Xmx512m -Xms256m"
+  DOCTOR_SERVICE_URL: "http://doctor-service:9092"
+  DOCTOR_SERVICE_USERNAME: "admin"
+  DOCTOR_SERVICE_PASSWORD: "password"

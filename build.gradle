@@ -3,7 +3,12 @@ plugins {
     id 'org.springframework.boot' version '3.4.4'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+    id 'com.bmuschko.docker-java-application' version '9.4.0'
 }
+
+group = 'com.clinica'
+version = '1.0'
+description = 'Simple Microservice for a Clinic'
 
 group = 'com.clinica'
 version = '1.0'
@@ -61,4 +66,58 @@ jacocoTestReport {
         xml.required = true
         html.required = true
     }
+}
+
+// Docker Configuration
+task dockerBuild(type: com.bmuschko.gradle.docker.tasks.image.DockerBuildImage) {
+    group = 'docker'
+    description = 'Build Docker image for the application'
+
+    dependsOn build
+    dockerFile = file('Dockerfile')
+    inputDir = file('.')
+    images.add("clinica:${project.version}")
+    images.add("clinica:latest")
+}
+
+task dockerPush(type: com.bmuschko.gradle.docker.tasks.image.DockerPushImage) {
+    group = 'docker'
+    description = 'Push Docker image to Docker Hub'
+
+    dependsOn dockerBuild
+
+    doFirst {
+        def dockerHubUsername = System.getenv('DOCKER_HUB_USERNAME')
+        if (!dockerHubUsername) {
+            throw new GradleException("Environment variable DOCKER_HUB_USERNAME must be set")
+        }
+
+        images.add("${dockerHubUsername}/clinica:${project.version}")
+        images.add("${dockerHubUsername}/clinica:latest")
+    }
+}
+
+task dockerRun(type: com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer) {
+    group = 'docker'
+    description = 'Run Docker container locally'
+
+    dependsOn dockerBuild
+    targetImageId { "clinica:${project.version}" }
+    containerName = 'clinica-app'
+    hostConfig.portBindings = ['9091:9091']
+    envVars = [
+        'SPRING_PROFILES_ACTIVE': 'prod'
+    ]
+}
+
+task dockerClean(type: Exec) {
+    group = 'docker'
+    description = 'Clean up Docker images and containers'
+
+    commandLine 'sh', '-c', '''
+        docker stop clinica-app || true
+        docker rm clinica-app || true
+        docker rmi clinica:latest clinica:1.0 || true
+        docker system prune -f
+    '''
 }

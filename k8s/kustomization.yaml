@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: clinica
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: REPLACE_IMAGE
+    newTag: latest
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: clinica
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/instance: clinica-prod
+      app.kubernetes.io/version: "1.0"
+      app.kubernetes.io/managed-by: kustomize

@@ -69,6 +69,8 @@ The application will start on `http://localhost:9091`.
 
 ### Running with Docker
 
+#### Basic Docker Commands
+
 1. Build the Docker image:
 
    ```bash
@@ -81,16 +83,48 @@ The application will start on `http://localhost:9091`.
    docker run -p 9091:9091 clinica
    ```
 
-3. Build the Docker image:
+#### Docker Scripts and Gradle Tasks
 
-   ```bash
-   docker build -t clinica .
-   ```
+The project includes comprehensive Docker support with helper scripts and Gradle tasks:
 
-4. Run the container:
-   ```bash
-   docker run -p 9091:9091 clinica
-   ```
+##### Using Gradle Tasks
+
+```bash
+# Build Docker image
+./gradlew dockerBuild
+
+# Run container locally
+./gradlew dockerRun
+
+# Push to Docker Hub (requires environment variables)
+export DOCKER_HUB_USERNAME=your_username
+export DOCKER_HUB_PASSWORD=your_password
+./gradlew dockerPush
+
+# Clean up Docker resources
+./gradlew dockerClean
+```
+
+##### Using Helper Scripts
+
+```bash
+# Interactive Docker management (recommended)
+./scripts/docker-manager.sh
+
+# Individual operations
+./scripts/docker-build.sh          # Build image
+./scripts/docker-run.sh            # Run container locally
+./scripts/docker-push.sh           # Push to Docker Hub
+```
+
+##### Environment Variables for Docker Hub
+
+Set these environment variables before pushing to Docker Hub:
+
+```bash
+export DOCKER_HUB_USERNAME=your_dockerhub_username
+export DOCKER_HUB_PASSWORD=your_dockerhub_password
+```
 
 ## Accessing the H2 Database Console
 

@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM gradle:8.7-jdk21-alpine AS build
+FROM gradle:8.7-jdk21 AS build
 WORKDIR /home/gradle/src
 COPY --chown=gradle:gradle . .
 RUN gradle build --no-daemon
@@ -9,7 +9,7 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Copy the JAR file from the build stage
-COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
+COPY --from=build /home/gradle/src/build/libs/clinica-1.0.jar app.jar
 
 # Expose the port the application runs on
 EXPOSE 9091

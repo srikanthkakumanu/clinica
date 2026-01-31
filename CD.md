@@ -1,11 +1,26 @@
 # Continuous Deployment (CD)
 
-This repository supports Continuous Deployment using both Jenkins and GitHub Actions.
+This repository supports Continuous Deployment using both Jenkins and GitHub Actions with standardized Kubernetes labels.
 
 - **Jenkins Pipeline**: [Jenkinsfile](Jenkinsfile)
 - **GitHub Actions Workflow**: [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml)
-- **Kubernetes manifests**: [k8s/deployment.yaml](k8s/deployment.yaml) and [k8s/service.yaml](k8s/service.yaml)
+- **Kubernetes manifests**:
+  - [k8s/deployment.yaml](k8s/deployment.yaml) - Application deployment
+  - [k8s/service.yaml](k8s/service.yaml) - Service definition
+  - [k8s/pod.yaml](k8s/pod.yaml) - Standalone pod specification
+  - [k8s/configmap.yaml](k8s/configmap.yaml) - Application configuration
+  - [k8s/kustomization.yaml](k8s/kustomization.yaml) - Kustomize configuration
 - **Deploy script**: [scripts/deploy.sh](scripts/deploy.sh)
+
+## Kubernetes Labels
+
+All Kubernetes resources use standardized labels following the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/):
+
+- `app.kubernetes.io/name`: clinica
+- `app.kubernetes.io/component`: backend
+- `app.kubernetes.io/instance`: clinica-prod
+- `app.kubernetes.io/version`: "1.0"
+- `app.kubernetes.io/managed-by`: kubectl
 
 ## Jenkins CD
 
@@ -51,9 +66,16 @@ To deploy manually:
    docker push your-dockerhub-username/clinica:latest
    ```
 
-2. Deploy to Kubernetes:
+2. Deploy to Kubernetes using kubectl:
+
    ```bash
    kubectl apply -f k8s/
+   ```
+
+   Or using Kustomize:
+
+   ```bash
+   kubectl apply -k k8s/
    ```
 
 Or use the deploy script:
@@ -62,7 +84,67 @@ Or use the deploy script:
 ./scripts/deploy.sh
 ```
 
-## Notes
+## Configuration
 
-- Ensure the Kubernetes manifests are configured for your environment (e.g., correct image name, ports, environment variables).
-- Adapt the pipeline and manifests to match your organization's policies (e.g., image scanning, approvals, staging environments).
+The application uses a ConfigMap for externalized configuration:
+
+- **SPRING_PROFILES_ACTIVE**: Set to "prod" for production
+- **JAVA_OPTS**: JVM options for memory and performance tuning
+- **DOCTOR_SERVICE_URL**: URL of the external doctor microservice
+- **DOCTOR_SERVICE_USERNAME/PASSWORD**: Credentials for doctor service authentication
+
+To modify configuration, update the `k8s/configmap.yaml` file and redeploy:
+
+```bash
+kubectl apply -f k8s/configmap.yaml
+kubectl rollout restart deployment/clinica
+```
+
+## Health Checks
+
+The application includes comprehensive health checks:
+
+- **Liveness Probe**: Checks `/actuator/health` every 30 seconds after 60 seconds initial delay
+- **Readiness Probe**: Ensures the application is ready to serve traffic
+- **Startup Probe**: Prevents premature termination during application startup
+
+## Resource Management
+
+- **Memory**: 256Mi request, 512Mi limit
+- **CPU**: 250m request, 500m limit
+- **Rolling Update Strategy**: Max 1 unavailable pod, max 1 surge pod
+
+## Docker Hub Integration
+
+The project supports automated Docker image building and pushing to Docker Hub through both Jenkins and GitHub Actions pipelines.
+
+### Jenkins Docker Configuration
+
+- **Image Name**: `DOCKERHUB_USERNAME/clinica` (update with your DockerHub username in Jenkinsfile)
+- **Tag Strategy**: Uses build number as tag (`clinica:${BUILD_NUMBER}`)
+- **Credentials**: Requires `dockerhub-credentials` in Jenkins
+
+### GitHub Actions Docker Configuration
+
+- **Image Name**: Uses `DOCKERHUB_USERNAME/clinica` from secrets
+- **Tag Strategy**: Uses run number as tag (`clinica:${{ github.run_number }}`)
+- **Secrets Required**:
+  - `DOCKERHUB_USERNAME`: Your DockerHub username
+  - `DOCKERHUB_PASSWORD`: Your DockerHub password or access token
+
+### Local Docker Development
+
+For local development and testing, use the provided Gradle tasks and scripts:
+
+```bash
+# Build and run locally
+./gradlew dockerBuild dockerRun
+
+# Push to Docker Hub
+export DOCKER_HUB_USERNAME=your_username
+export DOCKER_HUB_PASSWORD=your_password
+./gradlew dockerPush
+
+# Interactive management
+./scripts/docker-manager.sh
+```
