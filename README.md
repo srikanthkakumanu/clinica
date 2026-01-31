@@ -119,12 +119,22 @@ export DOCKER_HUB_PASSWORD=your_password
 
 ##### Environment Variables for Docker Hub
 
-Set these environment variables before pushing to Docker Hub:
+Set these environment variables before pushing to Docker Hub. You can either set them manually or use the provided credentials script:
+
+**Option 1: Manual Setup**
 
 ```bash
 export DOCKER_HUB_USERNAME=your_dockerhub_username
-export DOCKER_HUB_PASSWORD=your_dockerhub_password
+export DOCKER_HUB_PASSWORD=your_dockerhub_password_or_token
 ```
+
+**Option 2: Interactive Credentials Script (Recommended)**
+
+```bash
+./scripts/set-docker-credentials.sh
+```
+
+This script will securely prompt you for your Docker Hub username and password/token, then set the required environment variables for the current shell session.
 
 ## Accessing the H2 Database Console
 
