@@ -80,7 +80,7 @@ task dockerBuild(type: com.bmuschko.gradle.docker.tasks.image.DockerBuildImage) 
     images.add("clinica:latest")
 }
 
-task dockerPush(type: com.bmuschko.gradle.docker.tasks.image.DockerPushImage) {
+task dockerPush(type: Exec) {
     group = 'docker'
     description = 'Push Docker image to Docker Hub'
 
@@ -88,12 +88,19 @@ task dockerPush(type: com.bmuschko.gradle.docker.tasks.image.DockerPushImage) {
 
     doFirst {
         def dockerHubUsername = System.getenv('DOCKER_HUB_USERNAME')
-        if (!dockerHubUsername) {
-            throw new GradleException("Environment variable DOCKER_HUB_USERNAME must be set")
+        def dockerHubPassword = System.getenv('DOCKER_HUB_PASSWORD')
+
+        if (!dockerHubUsername || !dockerHubPassword) {
+            throw new GradleException("Environment variables DOCKER_HUB_USERNAME and DOCKER_HUB_PASSWORD must be set")
         }
 
-        images.add("${dockerHubUsername}/clinica:${project.version}")
-        images.add("${dockerHubUsername}/clinica:latest")
+        commandLine 'sh', '-c', """
+            echo "${dockerHubPassword}" | docker login -u "${dockerHubUsername}" --password-stdin
+            docker tag clinica:${project.version} ${dockerHubUsername}/clinica:${project.version}
+            docker tag clinica:latest ${dockerHubUsername}/clinica:latest
+            docker push ${dockerHubUsername}/clinica:${project.version}
+            docker push ${dockerHubUsername}/clinica:latest
+        """
     }
 }
 

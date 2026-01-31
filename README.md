@@ -17,6 +17,7 @@ This project is a secure Spring Boot microservice for managing clinics with HATE
 - **Code Quality**: Integrated SonarQube for static code analysis.
 - **Test Coverage**: JaCoCo for code coverage reporting.
 - **CI/CD Pipeline**: Jenkins pipeline for automated building, testing, Docker image creation, and deployment.
+- **Docker Hub Integration**: Complete container lifecycle management with secure authentication and automated publishing.
 
 ## Technologies Used
 
@@ -31,6 +32,7 @@ This project is a secure Spring Boot microservice for managing clinics with HATE
 - **Lombok**: To reduce boilerplate code.
 - **Springdoc OpenAPI**: For generating Swagger API documentation.
 - **Gradle 9.3.1**: The build automation tool.
+- **Docker Gradle Plugin**: For container build and deployment automation.
 - **JaCoCo**: For code coverage.
 - **SonarQube**: For code quality analysis.
 - **Docker**: For containerization.
@@ -85,7 +87,7 @@ The application will start on `http://localhost:9091`.
 
 #### Docker Scripts and Gradle Tasks
 
-The project includes comprehensive Docker support with helper scripts and Gradle tasks:
+The project includes comprehensive Docker support with helper scripts and Gradle tasks for complete container lifecycle management:
 
 ##### Using Gradle Tasks
 
@@ -96,9 +98,7 @@ The project includes comprehensive Docker support with helper scripts and Gradle
 # Run container locally
 ./gradlew dockerRun
 
-# Push to Docker Hub (requires environment variables)
-export DOCKER_HUB_USERNAME=your_username
-export DOCKER_HUB_PASSWORD=your_password
+# Push to Docker Hub (requires authentication)
 ./gradlew dockerPush
 
 # Clean up Docker resources
@@ -108,33 +108,100 @@ export DOCKER_HUB_PASSWORD=your_password
 ##### Using Helper Scripts
 
 ```bash
-# Interactive Docker management (recommended)
+# Interactive Docker management (recommended for beginners)
 ./scripts/docker-manager.sh
 
 # Individual operations
-./scripts/docker-build.sh          # Build image
-./scripts/docker-run.sh            # Run container locally
-./scripts/docker-push.sh           # Push to Docker Hub
+./scripts/docker-build.sh          # Build image with tagging options
+./scripts/docker-run.sh            # Run container locally with options
+./scripts/docker-push.sh           # Push to Docker Hub with authentication
 ```
 
-##### Environment Variables for Docker Hub
+##### Docker Hub Authentication
 
-Set these environment variables before pushing to Docker Hub. You can either set them manually or use the provided credentials script:
+**Secure Authentication (Recommended):**
 
-**Option 1: Manual Setup**
+```bash
+# Interactive credentials setup
+./scripts/set-docker-credentials.sh
+```
+
+This script securely prompts for your Docker Hub credentials and sets them for the current session.
+
+**Manual Environment Variables:**
 
 ```bash
 export DOCKER_HUB_USERNAME=your_dockerhub_username
 export DOCKER_HUB_PASSWORD=your_dockerhub_password_or_token
 ```
 
-**Option 2: Interactive Credentials Script (Recommended)**
+##### Complete Docker Workflow
 
 ```bash
+# 1. Set up credentials
 ./scripts/set-docker-credentials.sh
+
+# 2. Build and test locally
+./gradlew dockerBuild dockerRun
+
+# 3. Verify application is running
+curl http://localhost:9091/actuator/health
+
+# 4. Push to Docker Hub
+./gradlew dockerPush
+
+# 5. Clean up when done
+./gradlew dockerClean
 ```
 
-This script will securely prompt you for your Docker Hub username and password/token, then set the required environment variables for the current shell session.
+##### Docker Image Information
+
+- **Base Images**: Multi-stage build with Gradle and Eclipse Temurin JRE
+- **Tags**: `clinica:1.0` and `clinica:latest` (local), plus Docker Hub tags
+- **Port**: 9091
+- **Health Check**: `/actuator/health` endpoint
+
+## Docker Hub Integration
+
+The project includes comprehensive Docker Hub integration for containerized deployment and distribution.
+
+### Automated CI/CD Publishing
+
+The CI/CD pipelines automatically build and push Docker images to Docker Hub:
+
+- **Jenkins**: Pushes images with build numbers as tags (`clinica:${BUILD_NUMBER}`)
+- **GitHub Actions**: Pushes images with run numbers as tags (`clinica:${{ github.run_number }}`)
+
+### Local Docker Hub Publishing
+
+For local development and manual publishing:
+
+```bash
+# 1. Set up secure authentication
+./scripts/set-docker-credentials.sh
+
+# 2. Build and push
+./gradlew dockerBuild dockerPush
+
+# Or use individual scripts
+./scripts/docker-build.sh
+./scripts/docker-push.sh
+```
+
+### Docker Image Details
+
+- **Repository**: `your-username/clinica`
+- **Tags**: `latest`, `1.0`, and CI/CD generated tags
+- **Base Image**: Multi-stage build (Gradle build + Eclipse Temurin JRE)
+- **Port**: 9091
+- **Health Check**: Integrated with Spring Boot Actuator
+
+### Security Best Practices
+
+- **Access Tokens**: Use Docker Hub access tokens instead of passwords
+- **Environment Variables**: Credentials are session-based, not stored in code
+- **Git Ignore**: Credentials script is excluded from version control
+- **CI/CD Secrets**: Use platform secrets for automated deployments
 
 ## Accessing the H2 Database Console
 

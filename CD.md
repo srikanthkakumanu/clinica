@@ -137,14 +137,38 @@ The project supports automated Docker image building and pushing to Docker Hub t
 For local development and testing, use the provided Gradle tasks and scripts:
 
 ```bash
+# Secure authentication setup (recommended)
+./scripts/set-docker-credentials.sh
+
 # Build and run locally
 ./gradlew dockerBuild dockerRun
 
 # Push to Docker Hub
-export DOCKER_HUB_USERNAME=your_username
-export DOCKER_HUB_PASSWORD=your_password
 ./gradlew dockerPush
 
 # Interactive management
 ./scripts/docker-manager.sh
+
+# Individual scripts
+./scripts/docker-build.sh    # Build with custom tagging
+./scripts/docker-run.sh      # Run with custom options
+./scripts/docker-push.sh     # Push with authentication
+```
+
+#### Docker Credentials Script
+
+The `scripts/set-docker-credentials.sh` script provides secure, interactive setup of Docker Hub credentials:
+
+- **Secure Input**: Password/token input is hidden
+- **Token Support**: Supports both passwords and access tokens
+- **Session-Based**: Credentials are only set for the current shell session
+- **Git-Ignored**: Script is excluded from version control for security
+
+### Manual Docker Hub Authentication
+
+Alternatively, set environment variables manually:
+
+```bash
+export DOCKER_HUB_USERNAME=your_dockerhub_username
+export DOCKER_HUB_PASSWORD=your_dockerhub_password_or_token
 ```
