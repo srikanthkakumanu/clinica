@@ -1,9 +1,10 @@
-package com.srikanth.clinica;
+package com.clinica;
 
+import com.clinica.controller.ClinicController;
+import com.clinica.model.Clinic;
+import com.clinica.repos.ClinicRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.srikanth.clinica.controller.DoctorController;
-import com.srikanth.clinica.model.Doctor;
-import com.srikanth.clinica.repos.DoctorRepo;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,71 +33,76 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-public class DoctorRegistrationTests {
+public class ClinicRegistrationTests {
 
     private MockMvc mockMvc;
 
     @Mock
-    private DoctorRepo doctorRepo;
+    private ClinicRepo clinicRepo;
 
     @InjectMocks
-    private DoctorController doctorController;
+    private ClinicController clinicController;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(doctorController)
+        mockMvc = MockMvcBuilders.standaloneSetup(clinicController)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
     @Test
-    void whenCreateDoctor_thenReturns201Created() throws Exception {
-        Doctor doctor = new Doctor("Srikanth", "Kakumanu", "Lakshmi Prasad Arcade", "Tenali", "522201");
-        Doctor savedDoctor = new Doctor(1L, "Srikanth", "Kakumanu", "Lakshmi Prasad Arcade", "Tenali", "522201");
+    void whenCreateClinic_thenReturns201Created() throws Exception {
+        Clinic clinic = new Clinic("City Clinic", "Lakshmi Prasad Arcade", "Tenali", "522201", "9876543210",
+                "clinic@city.com");
+        Clinic savedClinic = new Clinic(1L, "City Clinic", "Lakshmi Prasad Arcade", "Tenali", "522201", "9876543210",
+                "clinic@city.com", null);
 
-        when(doctorRepo.save(ArgumentMatchers.any(Doctor.class))).thenReturn(savedDoctor);
+        when(clinicRepo.save(ArgumentMatchers.any(Clinic.class))).thenReturn(savedClinic);
 
-        mockMvc.perform(post("/api/doctors")
+        mockMvc.perform(post("/api/clinics")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(doctor)))
+                .content(objectMapper.writeValueAsString(clinic)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.firstName", is("Srikanth")))
-                .andExpect(jsonPath("$.lastName", is("Kakumanu")));
+                .andExpect(jsonPath("$.name", is("City Clinic")))
+                .andExpect(jsonPath("$.address", is("Lakshmi Prasad Arcade")));
     }
 
     @Test
-    void whenGetDoctorById_withValidId_thenReturns200Ok() throws Exception {
-        Doctor doctor = new Doctor(1L, "Srikanth", "Kakumanu", "Lakshmi Prasad Arcade", "Tenali", "522201");
-        when(doctorRepo.findById(1L)).thenReturn(Optional.of(doctor));
+    void whenGetClinicById_withValidId_thenReturns200Ok() throws Exception {
+        Clinic clinic = new Clinic(1L, "City Clinic", "Lakshmi Prasad Arcade", "Tenali", "522201", "9876543210",
+                "clinic@city.com", null);
+        when(clinicRepo.findById(1L)).thenReturn(Optional.of(clinic));
 
-        mockMvc.perform(get("/api/doctors/1"))
+        mockMvc.perform(get("/api/clinics/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.firstName", is("Srikanth")));
+                .andExpect(jsonPath("$.name", is("City Clinic")));
     }
 
     @Test
-    void whenGetDoctorById_withInvalidId_thenReturns404NotFound() throws Exception {
-        when(doctorRepo.findById(1L)).thenReturn(Optional.empty());
+    void whenGetClinicById_withInvalidId_thenReturns404NotFound() throws Exception {
+        when(clinicRepo.findById(1L)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/doctors/1"))
+        mockMvc.perform(get("/api/clinics/1"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void whenFindAllWithPagination_thenReturnsPaginatedResponse() throws Exception {
-        Doctor doctor1 = new Doctor(1L, "Srikanth", "Kakumanu", "Address 1", "City 1", "11111");
-        Doctor doctor2 = new Doctor(2L, "John", "Doe", "Address 2", "City 2", "22222");
-        List<Doctor> doctors = List.of(doctor1, doctor2);
+        Clinic clinic1 = new Clinic(1L, "Clinic 1", "Address 1", "City 1", "11111", "1111111111", "c1@clinic.com",
+                null);
+        Clinic clinic2 = new Clinic(2L, "Clinic 2", "Address 2", "City 2", "22222", "2222222222", "c2@clinic.com",
+                null);
+        List<Clinic> clinics = List.of(clinic1, clinic2);
         Pageable pageable = PageRequest.of(0, 2);
-        Page<Doctor> doctorPage = new PageImpl<>(doctors, pageable, doctors.size());
+        Page<Clinic> clinicPage = new PageImpl<>(clinics, pageable, clinics.size());
 
-        when(doctorRepo.findAll(ArgumentMatchers.any(Pageable.class))).thenReturn(doctorPage);
+        when(clinicRepo.findAll(ArgumentMatchers.any(Pageable.class))).thenReturn(clinicPage);
 
-        mockMvc.perform(get("/api/doctors?page=0&size=2"))
+        mockMvc.perform(get("/api/clinics?page=0&size=2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(2)))
                 .andExpect(jsonPath("$.totalElements", is(2)))
